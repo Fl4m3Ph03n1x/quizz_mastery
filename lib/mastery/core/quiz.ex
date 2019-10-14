@@ -8,6 +8,9 @@ defmodule Mastery.Core.Quiz do
 
   alias Mastery.Core.{Question, Response, Template}
 
+  @type category      :: atom
+  @type template_name :: atom
+
   typedstruct do
     field :title,             String.t
     field :current_question,  Question.t
@@ -18,6 +21,10 @@ defmodule Mastery.Core.Quiz do
     field :mastered,          [Template.t],                       default: []
     field :record,            %{template_name: non_neg_integer},  default: %{}
   end
+
+  ###############
+  # Public API  #
+  ###############
 
   @spec new(Enum.t) :: __MODULE__.t
   def new(fields), do: struct!(__MODULE__, fields)
@@ -34,39 +41,55 @@ defmodule Mastery.Core.Quiz do
       %__MODULE__{quiz | templates: templates}
   end
 
-  @spec add_to_list_or_nil(nil | [Template.t], Template.t) :: [Template.t]
-  defp add_to_list_or_nil(nil, template), do: [template]
-  defp add_to_list_or_nil(templates, template), do: [template | templates]
-
   @spec select_question(__MODULE__.t) :: nil | __MODULE__.t
   def select_question(%__MODULE__{templates: t}) when map_size(t) == 0, do: nil
 
-  def select_question(quiz) do
+  def select_question(quiz), do:
     quiz
     |> pick_current_question()
     |> move_template(:used)
     |> reset_template_cycle()
+
+  @spec answer_question(__MODULE__.t, Response.t) :: __MODULE__.t
+  def answer_question(quiz, %Response{correct: true} = response) do
+    new_quiz =
+      quiz
+      |> inc_record()
+      |> save_response(response)
+
+    maybe_advance(new_quiz, mastered?(new_quiz))
   end
+
+  def answer_question(quiz, %Response{correct: false} = response), do:
+    quiz
+    |> reset_record()
+    |> save_response(response)
+
+  ###############
+  # Aux Functs  #
+  ###############
+
+  @spec add_to_list_or_nil(nil | [Template.t], Template.t) :: [Template.t]
+  defp add_to_list_or_nil(nil, template), do: [template]
+  defp add_to_list_or_nil(templates, template), do: [template | templates]
 
   @spec pick_current_question(__MODULE__.t) :: __MODULE__.t
   defp pick_current_question(quiz), do:
     Map.put(quiz, :current_question, select_a_random_question(quiz))
 
   @spec select_a_random_question(__MODULE__.t) :: Question.t
-  defp select_a_random_question(quiz) do
+  defp select_a_random_question(quiz), do:
     quiz.templates
     |> Enum.random
     |> elem(1)
     |> Enum.random
     |> Question.new
-  end
 
   @spec move_template(__MODULE__.t, atom) :: __MODULE__.t
-  defp move_template(quiz, field) do
+  defp move_template(quiz, field), do:
     quiz
     |> remove_template_from_category()
     |> add_template_to_field(field)
-  end
 
   @spec remove_template_from_category(__MODULE__.t) :: __MODULE__.t
   defp remove_template_from_category(quiz) do
@@ -105,30 +128,14 @@ defmodule Mastery.Core.Quiz do
 
   @spec reset_template_cycle(__MODULE__.t) :: __MODULE__.t
   defp reset_template_cycle(%{templates: templates, used: used} = quiz) when
-  map_size(templates) == 0 do
+  map_size(templates) == 0, do:
     %__MODULE__{
       quiz |
       templates: Enum.group_by(used, fn template -> template.category end),
       used: []
     }
-  end
 
   defp reset_template_cycle(quiz), do: quiz
-
-  @spec answer_question(__MODULE__.t, Response.t) :: __MODULE__.t
-  def answer_question(quiz, %Response{correct: true} = response) do
-    new_quiz =
-      quiz
-      |> inc_record()
-      |> save_response(response)
-
-    maybe_advance(new_quiz, mastered?(new_quiz))
-  end
-
-  def answer_question(quiz, %Response{correct: false} = response), do:
-    quiz
-    |> reset_record()
-    |> save_response(response)
 
   @spec save_response(__MODULE__.t, Response.t) :: __MODULE__.t
   defp save_response(quiz, response), do:

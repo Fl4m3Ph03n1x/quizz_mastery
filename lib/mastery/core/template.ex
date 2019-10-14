@@ -7,6 +7,8 @@ defmodule Mastery.Core.Template do
 
   use TypedStruct
 
+  @type substitution :: atom
+
   typedstruct do
     field :name,          atom
     field :category,      atom
