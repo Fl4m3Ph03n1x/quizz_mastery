@@ -9,7 +9,7 @@ defmodule QuestionTest do
   end
 
   test "function generators are called" do
-    generators = addition_generators( fn -> 42 end, [0] )
+    generators = addition_generators(fn -> 42 end, [0])
     substitutions = build_question(generators: generators).substitutions
     assert Keyword.fetch!(substitutions, :left) == generators.left.()
   end

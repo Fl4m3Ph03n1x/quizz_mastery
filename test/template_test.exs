@@ -10,4 +10,3 @@ defmodule TemplateTest do
     assert not is_nil(template.compiled)
   end
 end
-

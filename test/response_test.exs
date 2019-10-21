@@ -11,12 +11,12 @@ defmodule ResponseTest do
     end
 
     test "a timestamp is added at build time", %{right: response} do
-      assert %DateTime{ } = response.timestamp
+      assert %DateTime{} = response.timestamp
       assert response.timestamp < DateTime.utc_now()
     end
   end
 
-  defp quiz() do
+  defp quiz do
     fields = template_fields(generators: %{left: [1], right: [2]})
 
     build_quiz()
@@ -28,9 +28,9 @@ defmodule ResponseTest do
     Response.new(quiz(), "mathy@example.com", answer)
 
   defp right(context), do:
-    { :ok, Map.put(context, :right, response("3")) }
+    {:ok, Map.put(context, :right, response("3"))}
 
   defp wrong(context), do:
-    { :ok, Map.put(context, :wrong, response("2")) }
+    {:ok, Map.put(context, :wrong, response("2"))}
 
  end
