@@ -35,7 +35,8 @@ defmodule Mastery.Boundary.QuizManager do
   def handle_call({:build_quiz, quiz_fields}, _from, quizzes) do
     quiz = Quiz.new(quiz_fields)
 
-    # Using a title as UUID, isn't this dangerous for clashes?
+    # Using a title as UUID is a trade off in the name of simplicity
+    # https://elixirforum.com/t/designing-elixir-systems-with-otp-pragprog/21626/25?u=fl4m3ph03n1x
     new_quizzes = Map.put(quizzes, quiz.title, quiz)
     {:reply, :ok, new_quizzes}
   end

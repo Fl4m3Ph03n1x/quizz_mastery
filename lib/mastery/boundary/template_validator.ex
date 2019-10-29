@@ -1,16 +1,16 @@
 defmodule Mastery.Boundary.TemplateValidator do
   alias Mastery.Boundary.Validator
 
-  @spec errors(any) :: [{atom | nil, String.t}]
+  @spec errors(any) :: :ok | Validator.errors
   def errors(fields) when is_list(fields) do
     fields = Map.new(fields)
     []
-    |> Validator.require(fields, :name, &validate_name/1)
-    |> Validator.require(fields, :category, &validate_name/1)
-    |> Validator.optional(fields, :instructions, &validate_instructions/1)
-    |> Validator.require(fields, :raw, &validate_raw/1)
-    |> Validator.require(fields, :generators, &validate_generators/1)
-    |> Validator.require(fields, :checker, &validate_checker/1)
+    |> Validator.require(fields,  :name,          &validate_name/1)
+    |> Validator.require(fields,  :category,      &validate_name/1)
+    |> Validator.optional(fields, :instructions,  &validate_instructions/1)
+    |> Validator.require(fields,  :raw,           &validate_raw/1)
+    |> Validator.require(fields,  :generators,    &validate_generators/1)
+    |> Validator.require(fields,  :checker,       &validate_checker/1)
   end
 
   def errors(_fields), do: [{nil, "A keyword list of fields is required"}]
@@ -45,7 +45,7 @@ defmodule Mastery.Boundary.TemplateValidator do
 
   defp validate_generators(_generators), do: {:error, "must be a map"}
 
-  @spec validate_generator({any, any}) :: :ok | {:error, String.t}
+  @spec validate_generator(any) :: :ok | {:error, String.t}
   defp validate_generator({name, generator}) when is_atom(name) and is_list(generator), do:
     Validator.check(generator != [], {:error, "can't be empty"})
 
