@@ -10,11 +10,11 @@ defmodule Mastery.Boundary.QuizSession do
   # Public API #
   ##############
 
-  @spec select_question(module) :: String.t
+  @spec select_question(pid) :: String.t
   def select_question(session), do:
     GenServer.call(session, :select_question)
 
-  @spec answer_question(module, String.t) :: :finished | {String.t, boolean}
+  @spec answer_question(pid, String.t) :: :finished | {String.t, boolean}
   def answer_question(session, answer), do:
     GenServer.call(session, {:answer_question, answer})
 
