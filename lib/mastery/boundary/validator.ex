@@ -1,4 +1,7 @@
 defmodule Mastery.Boundary.Validator do
+  @moduledoc """
+  Contains generic utility functions to perform data validation.
+  """
 
   @type error     :: {atom, String.t}
   @type errors    :: keyword(String.t)

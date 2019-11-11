@@ -1,4 +1,8 @@
 defmodule Mastery.Boundary.TemplateValidator do
+  @moduledoc """
+  Contains functions that validate template data.
+  """
+
   alias Mastery.Boundary.Validator
 
   @spec errors(any) :: :ok | Validator.errors

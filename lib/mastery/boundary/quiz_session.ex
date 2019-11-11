@@ -1,4 +1,8 @@
 defmodule Mastery.Boundary.QuizSession do
+  @moduledoc """
+  Holds and manages the state of a quizz session. When a player starts a quizz,
+  the player's progress is saved into the state this process is managing.
+  """
 
   use GenServer
 

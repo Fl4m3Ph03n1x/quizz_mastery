@@ -1,4 +1,8 @@
 defmodule Mastery.Boundary.QuizValidator do
+  @moduledoc """
+  Contains functions that validate quizz data.
+  """
+
   alias Mastery.Boundary.Validator
 
   @spec errors(any) :: :ok | Validator.errors

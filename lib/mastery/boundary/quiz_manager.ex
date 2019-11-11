@@ -1,4 +1,7 @@
 defmodule Mastery.Boundary.QuizManager do
+  @moduledoc """
+  Manages Quizz Sessions from players.
+  """
 
   use GenServer
 

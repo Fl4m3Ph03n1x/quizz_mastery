@@ -1,4 +1,7 @@
 defmodule Mastery.Examples.Math do
+  @moduledoc """
+  An example of how to use the APIs provided by the boundary layer of the app.
+  """
 
   alias Mastery.Core.Quiz
 
