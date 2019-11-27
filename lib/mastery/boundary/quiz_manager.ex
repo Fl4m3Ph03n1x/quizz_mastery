@@ -13,6 +13,10 @@ defmodule Mastery.Boundary.QuizManager do
   # Public API #
   ##############
 
+  @spec start_link(keyword) :: GenServer.on_start
+  def start_link(options \\ []), do:
+    GenServer.start_link(__MODULE__, %{}, options)
+
   @spec build_quiz(module, keyword) :: :ok
   def build_quiz(manager \\ __MODULE__, quiz_fields), do:
     GenServer.call(manager, {:build_quiz, quiz_fields})

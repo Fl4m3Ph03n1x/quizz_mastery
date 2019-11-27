@@ -5,13 +5,11 @@ defmodule Mastery do
   quizes in a simple manner.
   """
 
+  @type session :: {String.t, String.t}
+
   alias Mastery.Boundary.{QuizManager, QuizSession, QuizValidator,
     TemplateValidator, Validator}
   alias Mastery.Core.Quiz
-
-  @spec start_quiz_manager :: GenServer.on_start
-  def start_quiz_manager, do:
-    GenServer.start_link(QuizManager, %{}, name: QuizManager)
 
   @spec build_quiz(any) :: :ok | Validator.errors
   def build_quiz(fields), do:
@@ -25,17 +23,17 @@ defmodule Mastery do
           :ok <- QuizManager.add_template(title, fields),
     do: :ok
 
-  @spec take_quiz(String.t, String.t) :: pid
+  @spec take_quiz(String.t, String.t) :: session
   def take_quiz(title, email), do:
     with  %Quiz{} = quiz  <- QuizManager.lookup_quiz_by_title(title),
-          {:ok, session}  <- GenServer.start_link(QuizSession, {quiz, email}),
-    do: session
+          {:ok, _}        <- QuizSession.take_quiz(quiz, email),
+    do: {title, email}
 
-  @spec select_question(pid) :: String.t
+  @spec select_question(session) :: String.t
   def select_question(session), do:
     QuizSession.select_question(session)
 
-  @spec answer_question(pid, String.t) :: :finished | {String.t, boolean}
+  @spec answer_question(session, String.t) :: :finished | {String.t, boolean}
   def answer_question(session, answer), do:
     QuizSession.answer_question(session, answer)
 

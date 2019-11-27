@@ -9,18 +9,42 @@ defmodule Mastery.Boundary.QuizSession do
   alias Mastery.Core.{Quiz, Response}
 
   @type state :: {Quiz.t, String.t}
+  @type pname :: {String.t, String.t} #Process name to use with via tuples
+
+  @spec child_spec(state) :: map
+  def child_spec({quiz, email}), do:
+    %{
+      id:       {__MODULE__, {quiz.title, email}},
+      start:    {__MODULE__, :start_link, [{quiz, email}]},
+      restart:  :temporary
+    }
 
   ##############
   # Public API #
   ##############
 
-  @spec select_question(pid) :: String.t
-  def select_question(session), do:
-    GenServer.call(session, :select_question)
+  @spec start_link(state) :: GenServer.on_start
+  def start_link({quiz, email}), do:
+    GenServer.start_link(
+      __MODULE__,
+      {quiz, email},
+      name: via({quiz.title, email})
+    )
 
-  @spec answer_question(pid, String.t) :: :finished | {String.t, boolean}
-  def answer_question(session, answer), do:
-    GenServer.call(session, {:answer_question, answer})
+  @spec take_quiz(Quiz.t, String.t) :: DynamicSupervisor.on_start_child
+  def take_quiz(quiz, email), do:
+    DynamicSupervisor.start_child(
+      Mastery.Supervisor.QuizSession,
+      {__MODULE__, {quiz, email}}
+    )
+
+  @spec select_question(pname) :: String.t
+  def select_question(name), do:
+    GenServer.call(via(name), :select_question)
+
+  @spec answer_question(pname, String.t) :: :finished | {String.t, boolean}
+  def answer_question(name, answer), do:
+    GenServer.call(via(name), {:answer_question, answer})
 
   ############################
   # Callback implementations #
@@ -53,6 +77,18 @@ defmodule Mastery.Boundary.QuizSession do
       :reply,
       {quiz.current_question.asked, quiz.last_response.correct},
       {quiz, email}
+    }
+
+  ##############
+  # Aux functs #
+  ##############
+
+  @spec via({String.t, String.t}) :: {:via, module, {module, pname}}
+  defp via({_title, _email} = name), do:
+    {
+      :via,
+      Registry,
+      {Mastery.Registry.QuizSession, name}
     }
 
 end
