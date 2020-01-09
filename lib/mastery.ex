@@ -7,9 +7,17 @@ defmodule Mastery do
 
   @type session :: {String.t, String.t}
 
-  alias Mastery.Boundary.{QuizManager, QuizSession, QuizValidator,
+  alias Mastery.Boundary.{Proctor, QuizManager, QuizSession, QuizValidator,
     TemplateValidator, Validator}
   alias Mastery.Core.Quiz
+
+  @spec schedule_quiz(Quiz.t, [Template.t], DateTime.t, DateTime.t)
+  def schedule_quiz(quiz, templates, start_at, end_at) do
+    with  :ok  <- QuizValidator.errors(quiz),
+          true <- Enum.all?(templates, &(:ok == TemplateValidator.errors(&1))),
+          :ok  <- Proctor.schedule_quiz(quiz, templates, start_at, end_at),
+         do: :ok
+  end
 
   @spec build_quiz(any) :: :ok | Validator.errors
   def build_quiz(fields), do:
