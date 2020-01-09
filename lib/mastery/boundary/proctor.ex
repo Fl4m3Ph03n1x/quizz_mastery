@@ -26,10 +26,20 @@ defmodule Mastery.Boundary.Proctor do
     GenServer.call(proctor, {:schedule_quizz, quizz})
   end 
 
+  def start_quiz(quiz, now) do
+    Logger.info("starting quiz #{quiz.fields.title}...")
+    QuizManager.build_quiz(quiz.fields)
+    Enum.each(quiz.templates, &add_template(quiz, &1))
+
+    timeout = DateTime.diff(quiz.end_at, now, :millisecond)
+    Process.send_after(self(), {:end_quiz, quiz.fields.title}, timeout)
+  end
+
   # ############## #
   # Implementation #
   # ############## #
 
+  @impl GenServer
   def handle_call({:schedule_quizz, quiz }, _from, quizzes) do
     now = DateTime.utc_now
     ordered_quizzes = 
@@ -41,7 +51,14 @@ defmodule Mastery.Boundary.Proctor do
 
     build_reply_with_timeout({:reply, :ok}, ordered_quizzes, now)
   end
-  
+
+  @impl GenServer
+  def handle_info(:timeout, quizzes) do
+    now = DateTime.utc_now()
+    reamaining_quizzes = start_quizzes(quizzes, now)
+    build_reply_with_timeout({:noreply}, remaining_quizzes, now)
+  end
+
   defp build_reply_with_timeout(reply, quizzes, now), do:
     reply
     |> append_state(quizzes)
@@ -60,7 +77,8 @@ defmodule Mastery.Boundary.Proctor do
 
     Tuple.append(tuple, timeout)
   end
-
+  
+  @spec start_quizzes([Quiz.t], DateTime.t) :: [Quiz.t]
   defp start_quizzes(quizzes, now) do
     {ready, not_ready} = Enum.split_while(quizzes, fn quiz -> 
       date_time_less_than_or_equal?(quiz.start_at, now)
@@ -69,5 +87,9 @@ defmodule Mastery.Boundary.Proctor do
     Enum.each(ready, fn quiz -> start_quiz(quiz, now) end)
     not_ready
   end
+
+  @spec date_time_less_than_or_equal?(DateTime.t, DateTime.t) :: boolean
+  defp date_time_less_than_or_equal?(a, b), do: 
+    DateTime.compare(a, b) in ~w[lt eq]a
 
 end
