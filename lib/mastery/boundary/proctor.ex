@@ -62,7 +62,12 @@ defmodule Mastery.Boundary.Proctor do
   end
 
   defp start_quizzes(quizzes, now) do
-  
+    {ready, not_ready} = Enum.split_while(quizzes, fn quiz -> 
+      date_time_less_than_or_equal?(quiz.start_at, now)
+    end)
+
+    Enum.each(ready, fn quiz -> start_quiz(quiz, now) end)
+    not_ready
   end
 
 end
