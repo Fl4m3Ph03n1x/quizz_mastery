@@ -5,9 +5,9 @@ defmodule Mastery.Boundary.Proctor do
 
   alias Mastery.Boundary.{QuizManager, QuizSession}
 
-  # ########## #
-  # Public API #
-  # ########## #
+  ################
+  # Public API   #
+  ################
 
   def start_link(options \\ []), do:
     GenServer.start_link(__MODULE__, [], options)
@@ -35,9 +35,9 @@ defmodule Mastery.Boundary.Proctor do
     Process.send_after(self(), {:end_quiz, quiz.fields.title}, timeout)
   end
 
-  # ############## #
-  # Implementation #
-  # ############## #
+  ###################
+  # Implementation  #
+  ###################
 
   @impl GenServer
   def handle_call({:schedule_quizz, quiz }, _from, quizzes) do
@@ -58,6 +58,22 @@ defmodule Mastery.Boundary.Proctor do
     reamaining_quizzes = start_quizzes(quizzes, now)
     build_reply_with_timeout({:noreply}, remaining_quizzes, now)
   end
+
+  @impl GenServer
+  def handle_info({:end_quiz, title}, quizzes) do
+    QuizManager.remove_quiz(title)
+
+    title
+    |> QuizSession.active_sessions_s_for()
+    |> QuizSession.end_sessions()
+
+    Logger.info("Stopped quiz #{title}.")
+    handle_info(:timeout, quizzes)
+  end
+
+  #################
+  # Aux functions #
+  #################
 
   defp build_reply_with_timeout(reply, quizzes, now), do:
     reply
