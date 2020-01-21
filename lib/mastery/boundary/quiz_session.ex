@@ -46,6 +46,17 @@ defmodule Mastery.Boundary.QuizSession do
   def answer_question(name, answer), do:
     GenServer.call(via(name), {:answer_question, answer})
 
+  @spec active_sessions_for(String.t) :: [pname]
+  def active_sessions_for(quiz_title), do:
+    Mastery.Supervisor.QuizSession
+    |> DynamicSupervisor.which_children()
+    |> Enum.filter(&child_pid?/1)    
+    |> Enum.flat_map(&active_sessions(&1, quiz_title))
+
+  @spec end_sessions([pname]) :: :ok
+  def end_sessions(pnames), do:
+    Enum.each(pnames, fn name -> GenServer.stop(via(name)) end)
+
   ############################
   # Callback implementations #
   ############################
@@ -90,5 +101,17 @@ defmodule Mastery.Boundary.QuizSession do
       Registry,
       {Mastery.Registry.QuizSession, name}
     }
+
+  @spec child_pid?(any) :: boolean
+  defp child_pid?({:undefined, pid, :worker, [__MODULE__]}) when is_pid(pid), 
+    do: true
+
+  defp child_pid?(_child), do: false
+
+  @spec active_sessions({:undefined, pid, :worker, [module]}, String.t) :: [pname]
+  defp active_sessions({:undefined, pid, :worker, [__MODULE__]}, title), do:
+    Mastery.Registry.QuizSession
+    |> Registry.keys(pid)
+    |> Enum.filter(fn {quiz_title, _email} -> quiz_title == title end)
 
 end

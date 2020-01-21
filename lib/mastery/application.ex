@@ -3,7 +3,7 @@ defmodule Mastery.Application do
 
   use Application
 
-  alias Mastery.Boundary.QuizManager
+  alias Mastery.Boundary.{Proctor, QuizManager}
   alias Mastery.Registry.QuizSession, as: RQSession
   alias Mastery.Supervisor.QuizSession, as: SQSession
 
@@ -12,6 +12,7 @@ defmodule Mastery.Application do
     children = [
       {QuizManager,       [name: QuizManager]},
       {Registry,          [name: RQSession, keys: :unique]},
+      {Proctor,           [name: Proctor]},
       {DynamicSupervisor, [name: SQSession, strategy: :one_for_one]}
     ]
 

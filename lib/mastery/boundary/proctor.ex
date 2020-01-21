@@ -23,7 +23,7 @@ defmodule Mastery.Boundary.Proctor do
       end_at: end_at
     }
 
-    GenServer.call(proctor, {:schedule_quizz, quizz})
+    GenServer.call(proctor, {:schedule_quizz, quiz})
   end 
 
   def start_quiz(quiz, now) do
@@ -64,7 +64,7 @@ defmodule Mastery.Boundary.Proctor do
     QuizManager.remove_quiz(title)
 
     title
-    |> QuizSession.active_sessions_s_for()
+    |> QuizSession.active_sessions_for()
     |> QuizSession.end_sessions()
 
     Logger.info("Stopped quiz #{title}.")
