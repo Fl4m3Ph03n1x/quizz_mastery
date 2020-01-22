@@ -9,7 +9,7 @@ defmodule Mastery do
 
   alias Mastery.Boundary.{Proctor, QuizManager, QuizSession, QuizValidator,
     TemplateValidator, Validator}
-  alias Mastery.Core.Quiz
+  alias Mastery.Core.{Quiz, Template}
 
   @spec schedule_quiz(Quiz.t, [Template.t], DateTime.t, DateTime.t) :: :ok | any
   def schedule_quiz(quiz, templates, start_at, end_at) do
