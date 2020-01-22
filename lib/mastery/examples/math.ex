@@ -30,7 +30,7 @@ defmodule Mastery.Examples.Math do
 
   def quiz do
     quiz_fields()
-    |> Quiz.new
+    |> Quiz.new()
     |> Quiz.add_template(template_fields())
   end
 end

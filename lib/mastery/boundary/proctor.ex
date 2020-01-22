@@ -20,7 +20,7 @@ defmodule Mastery.Boundary.Proctor do
   def start_link(options \\ []), do:
     GenServer.start_link(__MODULE__, [], options)
   
-  @spec schedule_quiz(module, map, [keyword], DateTime.t, DateTime.t) :: any
+  @spec schedule_quiz(module, map, [keyword], DateTime.t, DateTime.t) :: :ok
   def schedule_quiz(proctor \\ __MODULE__, quiz, temps, start_at, end_at) do
     quiz = %{
       fields: quiz,
@@ -103,25 +103,34 @@ defmodule Mastery.Boundary.Proctor do
       date_time_less_than_or_equal?(quiz.start_at, now)
     end)
 
-    Enum.each(ready, fn quiz -> start_quiz(quiz, now) end)
+    Enum.each(ready, &start_quiz(&1, now))
     not_ready
   end
 
   @spec start_quiz(quiz_info, DateTime.t) :: reference
   defp start_quiz(quiz, now) do
+    IO.puts("QUIZ_INFO NOT ATOM: #{inspect quiz}")
     Logger.info("starting quiz #{quiz.fields.title}...")
     QuizManager.build_quiz(quiz.fields)
     Enum.each(quiz.templates, &add_template(quiz, &1))
+  
+    timeout = 
+      quiz.end_at
+      |> DateTime.diff(now, :millisecond)
+      |> time_to_finish()
 
-    timeout = DateTime.diff(quiz.end_at, now, :millisecond)
     Process.send_after(self(), {:end_quiz, quiz.fields.title}, timeout)
   end
+
+  @spec time_to_finish(integer) :: non_neg_integer
+  defp time_to_finish(timediff) when timediff >= 0, do: timediff
+  defp time_to_finish(_negative_timediff), do: 0
 
   @spec date_time_less_than_or_equal?(DateTime.t, DateTime.t) :: boolean
   defp date_time_less_than_or_equal?(a, b), do: 
     DateTime.compare(a, b) in ~w[lt eq]a
   
-  @spec add_template(any, keyword) :: :ok
+  @spec add_template(quiz_info, keyword) :: :ok
   defp add_template(quiz, template_fields), do:
     QuizManager.add_template(quiz.fields.title, template_fields)
 
