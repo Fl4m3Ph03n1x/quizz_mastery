@@ -6,7 +6,7 @@ defmodule Mastery.Boundary.Proctor do
   alias Mastery.Boundary.{QuizManager, QuizSession}
 
   @type quiz_info :: %{
-    fields: map, 
+    fields: Enum.t, 
     templates: [keyword], 
     start_at: DateTime.t, 
     end_at: DateTime.t

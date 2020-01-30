@@ -17,7 +17,7 @@ defmodule Mastery.Boundary.QuizManager do
   def start_link(options \\ []), do:
     GenServer.start_link(__MODULE__, %{}, options)
 
-  @spec build_quiz(module, keyword) :: :ok
+  @spec build_quiz(module, Enum.t) :: :ok
   def build_quiz(manager \\ __MODULE__, quiz_fields), do:
     GenServer.call(manager, {:build_quiz, quiz_fields})
 
