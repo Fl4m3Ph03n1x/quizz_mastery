@@ -42,9 +42,9 @@ defmodule Mastery.Boundary.QuizSession do
   def select_question(name), do:
     GenServer.call(via(name), :select_question)
 
-  @spec answer_question(pname, String.t) :: :finished | {String.t, boolean}
-  def answer_question(name, answer), do:
-    GenServer.call(via(name), {:answer_question, answer})
+  @spec answer_question(pname, String.t, function) :: :finished | {String.t, boolean}
+  def answer_question(name, answer, persistence_fn), do:
+    GenServer.call(via(name), {:answer_question, answer, persistence_fn})
 
   @spec active_sessions_for(String.t) :: [pname]
   def active_sessions_for(quiz_title), do:
@@ -71,11 +71,17 @@ defmodule Mastery.Boundary.QuizSession do
     {:reply, quiz.current_question.asked, {quiz, email}}
   end
 
-  def handle_call({:answer_question, answer}, _from, {quiz, email}) do
-    quiz
-    |> Quiz.answer_question(Response.new(quiz, email, answer))
-    |> Quiz.select_question()
+  def handle_call({:answer_question, answer, fun}, _from, {quiz, email}) do
+    persistence_fn = fun || fn(response, f) -> f.(response) end
+    response = Response.new(quiz, email, answer)
+    
+    persistence_fn.(response, fn r -> 
+      quiz
+      |> Quiz.answer_question(r)
+      |> Quiz.select_question()
+    end)
     |> maybe_finish(email)
+
   end
 
   @spec maybe_finish(Quiz.t | nil, String.t) ::

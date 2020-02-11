@@ -11,7 +11,6 @@ defmodule Mastery.MixProject do
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger, :eex],
@@ -19,10 +18,10 @@ defmodule Mastery.MixProject do
     ]
   end
 
-  # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:typed_struct, "~> 0.1.4"},
+      {:typed_struct,         "~> 0.1.4"},
+      {:mastery_persistence,  path: "mastery_persistence"},
 
       # Dev
       {:credo,          "~> 1.1.0",       only: [:dev, :test],  runtime: false},

@@ -11,6 +11,12 @@ defmodule Mastery do
     TemplateValidator, Validator}
   alias Mastery.Core.{Quiz, Template}
 
+  @persistence_fn Application.get_env(:mastery, :persistence_fn)
+
+  ##############
+  # Public API #
+  ##############
+
   @spec schedule_quiz(Quiz.t, [Template.t], DateTime.t, DateTime.t) :: :ok | any
   def schedule_quiz(quiz, templates, start_at, end_at) do
     with  :ok  <- QuizValidator.errors(quiz),
@@ -41,8 +47,8 @@ defmodule Mastery do
   def select_question(session), do:
     QuizSession.select_question(session)
 
-  @spec answer_question(session, String.t) :: :finished | {String.t, boolean}
-  def answer_question(session, answer), do:
-    QuizSession.answer_question(session, answer)
+  @spec answer_question(session, String.t, function) :: :finished | {String.t, boolean}
+  def answer_question(session, answer, persistence_fn \\ @persistence_fn), do:
+    QuizSession.answer_question(session, answer, persistence_fn)
 
 end
