@@ -3,6 +3,10 @@ defmodule MasteryPersistenceTest do
 
   alias MasteryPersistenceTest.{Response, Repo}
 
+  #########
+  # Setup #
+  #########
+
   setup do
     :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
     response = %{
@@ -17,4 +21,16 @@ defmodule MasteryPersistenceTest do
 
     {:ok, %{response: response}}
   end
+
+  #########
+  # Tests #
+  #########
+
+  test "responses are recorded", %{response: response} do
+    assert Repo.aggregate(Response, :count, :id) == 0
+    assert :ok = MasteryPersistence.record_response(response)
+    assert Repo.all(Response) |> Enum.map(fn r -> r.email end) == 
+      [response.email]
+  end
+
 end
