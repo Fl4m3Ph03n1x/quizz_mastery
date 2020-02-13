@@ -7,13 +7,49 @@ defmodule MasteryTest do
   alias Mastery.Boundary.QuizSession
   alias MasteryPersistence.Response
 
-  defp enable_persistence() do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+  #########
+  # Setup #
+  #########
+
+  setup do
+    enable_persistence()
+
+    always_add_1_to_2 = [
+      template_fields(generators: addition_generators([1], [2]))
+    ]
+
+    assert "" != ExUnit.CaptureLog.capture_log(fn -> 
+      :ok = start_quiz(always_add_1_to_2)
+    end)
+
+    :ok
   end
 
-  defp response_count() do
-    Repo.aggregate(Response, :count, :id)
+  #########
+  # Tests #
+  #########
+
+  test "Take a quiz, manage lifecycle and persist responses" do
+    session = take_quiz("yes_mathter@example.com")
+
+    select_question(session)
+    assert give_wrong_answer(session) == {"1 + 2", false}
+    assert give_right_answer(session) == {"1 + 2", true}
+    assert response_count() > 0
+
+    assert give_right_answer(session) == :finished
+    assert QuizSession.active_sessions_for(Math.quiz_fields().title) == []
   end
+
+  #################
+  # Aux Functions #
+  #################
+
+  defp enable_persistence(), do:
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+
+  defp response_count(), do:
+    Repo.aggregate(Response, :count, :id)
 
   defp start_quiz(fields) do
     now = DateTime.utc_now()
@@ -22,19 +58,16 @@ defmodule MasteryTest do
     Mastery.schedule_quiz(Math.quiz_fields(), fields, now, ending)
   end
 
-  defp take_quiz(email) do
+  defp take_quiz(email), do:
     Mastery.take_quiz(Math.quiz.title, email)
-  end
 
-  defp select_question(session) do
+  defp select_question(session), do:
     assert Mastery.select_question(session) == "1 + 2"
-  end
 
-  defp give_wrong_answer(session) do
+  defp give_wrong_answer(session), do:
     Mastery.answer_question(session, "wrong", &MasteryPersistence.record_response/2)
-  end
 
-  defp give_right_answer(session) do
+  defp give_right_answer(session), do:
     Mastery.answer_question(session, "3", &MasteryPersistence.record_response/2)
-  end
+
 end
