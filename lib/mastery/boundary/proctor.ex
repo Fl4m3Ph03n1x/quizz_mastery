@@ -20,13 +20,14 @@ defmodule Mastery.Boundary.Proctor do
   def start_link(options \\ []), do:
     GenServer.start_link(__MODULE__, [], options)
   
-  @spec schedule_quiz(module, map, [keyword], DateTime.t, DateTime.t) :: :ok
-  def schedule_quiz(proctor \\ __MODULE__, quiz, temps, start_at, end_at) do
+  @spec schedule_quiz(module, map, [keyword], DateTime.t, DateTime.t, pid | nil) :: :ok
+  def schedule_quiz(proctor \\ __MODULE__, quiz, temps, start_at, end_at, notify_pid) do
     quiz = %{
       fields: quiz,
       templates: temps, 
       start_at: start_at,
-      end_at: end_at
+      end_at: end_at,
+      notify_pid: notify_pid
     }
 
     GenServer.call(proctor, {:schedule_quiz, quiz})
@@ -60,7 +61,7 @@ defmodule Mastery.Boundary.Proctor do
   end
 
   @impl GenServer
-  def handle_info({:end_quiz, title}, quizzes) do
+  def handle_info({:end_quiz, title, notify_pid}, quizzes) do
     QuizManager.remove_quiz(title)
 
     title
@@ -68,6 +69,7 @@ defmodule Mastery.Boundary.Proctor do
     |> QuizSession.end_sessions()
 
     Logger.info("Stopped quiz #{title}.")
+    notify_stopped(notify_pid, title)
     handle_info(:timeout, quizzes)
   end
 
@@ -103,14 +105,14 @@ defmodule Mastery.Boundary.Proctor do
       date_time_less_than_or_equal?(quiz.start_at, now)
     end)
 
-    Enum.each(ready, &start_quiz(&1, now))
+    Enum.each(ready, fn quiz -> start_quiz(quiz, now) end)
     not_ready
   end
 
   @spec start_quiz(quiz_info, DateTime.t) :: reference
   defp start_quiz(quiz, now) do
-    IO.puts("QUIZ_INFO NOT ATOM: #{inspect quiz}")
     Logger.info("starting quiz #{quiz.fields.title}...")
+    notify_start(quiz)
     QuizManager.build_quiz(quiz.fields)
     Enum.each(quiz.templates, &add_template(quiz, &1))
   
@@ -119,8 +121,18 @@ defmodule Mastery.Boundary.Proctor do
       |> DateTime.diff(now, :millisecond)
       |> time_to_finish()
 
-    Process.send_after(self(), {:end_quiz, quiz.fields.title}, timeout)
+    Process.send_after(self(), {:end_quiz, quiz.fields.title, quiz.notify_pid}, timeout)
   end
+
+  @spec notify_start(map) :: any
+  defp notify_start(%{notify_pid: nil}), do: nil
+  
+  defp notify_start(quiz), do: 
+    send(quiz.notify_pid, {:started, quiz.fields.title})
+
+  @spec notify_stopped(pid | nil, String.t) :: any
+  defp notify_stopped(nil, _title), do: nil
+  defp notify_stopped(pid, title), do: send(pid, {:stopped, title})
 
   @spec time_to_finish(integer) :: non_neg_integer
   defp time_to_finish(timediff) when timediff >= 0, do: timediff

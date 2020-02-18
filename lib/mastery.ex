@@ -17,11 +17,11 @@ defmodule Mastery do
   # Public API #
   ##############
 
-  @spec schedule_quiz(Quiz.t, [Template.t], DateTime.t, DateTime.t) :: :ok | any
-  def schedule_quiz(quiz, templates, start_at, end_at) do
+  @spec schedule_quiz(Quiz.t, [Template.t], DateTime.t, DateTime.t, pid | nil) :: :ok | any
+  def schedule_quiz(quiz, templates, start_at, end_at, notify_pid \\ nil) do
     with  :ok  <- QuizValidator.errors(quiz),
           true <- Enum.all?(templates, &(:ok == TemplateValidator.errors(&1))),
-          :ok  <- Proctor.schedule_quiz(quiz, templates, start_at, end_at),
+          :ok  <- Proctor.schedule_quiz(quiz, templates, start_at, end_at, notify_pid),
          do: :ok
   end
 
