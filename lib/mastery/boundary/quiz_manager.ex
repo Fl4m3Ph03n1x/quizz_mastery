@@ -68,7 +68,7 @@ defmodule Mastery.Boundary.QuizManager do
 
   def handle_call({:remove_quiz, quiz_title}, _from, quizzes) do
     new_quizzes = Map.delete(quizzes, quiz_title)
-    {:reply, :ok, new_quizzes}  
+    {:reply, :ok, new_quizzes}
   end
 
 end
