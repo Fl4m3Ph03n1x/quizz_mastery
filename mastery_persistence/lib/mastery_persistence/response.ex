@@ -1,4 +1,8 @@
 defmodule MasteryPersistence.Response do
+  @moduledoc """
+  Validates the fields from a Mastery response.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -17,6 +21,7 @@ defmodule MasteryPersistence.Response do
     timestamps()
   end
 
+  @spec record_changeset(map) :: any
   def record_changeset(fields) do
     %__MODULE__{}
     |> cast(fields, @mastery_fields ++ @timestamps)

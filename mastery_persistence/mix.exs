@@ -21,7 +21,11 @@ defmodule MasteryPersistence.MixProject do
   defp deps do
     [
       {:ecto_sql, "~> 3.1"},
-      {:postgrex, "~> 0.14.1"}
+      {:postgrex, "~> 0.14.1"},
+
+      # Dev
+      {:credo,          "~> 1.1.0",       only: [:dev, :test],  runtime: false},
+      {:dialyxir,       "~> 1.0.0-rc.7",  only: [:dev],         runtime: false}
     ]
   end
 end

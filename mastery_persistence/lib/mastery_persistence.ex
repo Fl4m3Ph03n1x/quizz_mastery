@@ -1,14 +1,27 @@
 defmodule MasteryPersistence do
   @moduledoc """
-  Documentation for MasteryPersistence.
+  Public API of the project.
+  Allows Mastery to save responses into the DB and to get reports from finished
+  quizes.
   """
 
   import Ecto.Query, only: [from: 2]
 
-  alias MasteryPersistence.{Response, Repo}
+  alias MasteryPersistence.{Repo, Response}
 
+  @type response :: %{
+    quiz_title: String.t,
+    template_name: String.t,
+    to: String.t,
+    email: String.t,
+    correct: boolean,
+    inserted_at: DateTime.t,
+    updated_at: DateTime.t
+  }
+
+  @spec record_response(response, (any -> :ok)) :: any
   def record_response(response, in_transaction \\ fn _response -> :ok end) do
-    {:ok, result} = Repo.transaction(fn -> 
+    {:ok, result} = Repo.transaction(fn ->
       %{
         quiz_title:     to_string(response.quiz_title),
         template_name:  to_string(response.template_name),
@@ -28,6 +41,7 @@ defmodule MasteryPersistence do
     result
   end
 
+  @spec report(String.t) :: map
   def report(quiz_title) do
     quiz_title = to_string(quiz_title)
     from(

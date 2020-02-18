@@ -1,14 +1,17 @@
 defmodule MasteryPersistenceTest do
+  @moduledoc false
+
   use ExUnit.Case
 
-  alias MasteryPersistence.{Response, Repo}
+  alias Ecto.Adapters.SQL.Sandbox
+  alias MasteryPersistence.{Repo, Response}
 
   #########
   # Setup #
   #########
 
   setup do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+    :ok = Sandbox.checkout(Repo)
     response = %{
       quiz_title: :simple_addition,
       template_name: :single_digit_addition,
@@ -29,7 +32,7 @@ defmodule MasteryPersistenceTest do
   test "responses are recorded", %{response: response} do
     assert Repo.aggregate(Response, :count, :id) == 0
     assert :ok = MasteryPersistence.record_response(response)
-    assert Repo.all(Response) |> Enum.map(fn r -> r.email end) == 
+    assert Repo.all(Response) |> Enum.map(fn r -> r.email end) ==
       [response.email]
   end
 
@@ -39,7 +42,7 @@ defmodule MasteryPersistenceTest do
 
   test "an error in the function rolls back the save", %{response: response} do
     assert Repo.aggregate(Response, :count, :id) == 0
-    assert_raise RuntimeError, fn -> 
+    assert_raise RuntimeError, fn ->
       MasteryPersistence.record_response(response, fn _r -> raise "oops" end)
     end
     assert Repo.aggregate(Response, :count, :id) == 0

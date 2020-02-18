@@ -14,7 +14,8 @@ defmodule Mastery.Boundary.Proctor do
     fields: Enum.t,
     templates: [keyword],
     start_at: DateTime.t,
-    end_at: DateTime.t
+    end_at: DateTime.t,
+    notify_pid: pid | nil
   }
 
   ################
