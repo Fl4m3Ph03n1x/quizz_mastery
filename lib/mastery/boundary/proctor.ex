@@ -1,4 +1,9 @@
 defmodule Mastery.Boundary.Proctor do
+  @moduledoc """
+  Responsible for starting, stopping and schedulling quizzes. Has all the
+  timing logic. Also notifies processes of when quizzes start and stop.
+  """
+
   use GenServer
 
   require Logger
@@ -6,25 +11,25 @@ defmodule Mastery.Boundary.Proctor do
   alias Mastery.Boundary.{QuizManager, QuizSession}
 
   @type quiz_info :: %{
-    fields: Enum.t, 
-    templates: [keyword], 
-    start_at: DateTime.t, 
+    fields: Enum.t,
+    templates: [keyword],
+    start_at: DateTime.t,
     end_at: DateTime.t
   }
 
   ################
   # Public API   #
   ################
-  
+
   @spec start_link(keyword) :: GenServer.on_start
   def start_link(options \\ []), do:
     GenServer.start_link(__MODULE__, [], options)
-  
+
   @spec schedule_quiz(module, map, [keyword], DateTime.t, DateTime.t, pid | nil) :: :ok
   def schedule_quiz(proctor \\ __MODULE__, quiz, temps, start_at, end_at, notify_pid) do
     quiz = %{
       fields: quiz,
-      templates: temps, 
+      templates: temps,
       start_at: start_at,
       end_at: end_at,
       notify_pid: notify_pid
@@ -43,10 +48,10 @@ defmodule Mastery.Boundary.Proctor do
   @impl GenServer
   def handle_call({:schedule_quiz, quiz }, _from, quizzes) do
     now = DateTime.utc_now
-    ordered_quizzes = 
+    ordered_quizzes =
       [quiz | quizzes]
       |> start_quizzes(now)
-      |> Enum.sort(fn a, b -> 
+      |> Enum.sort(fn a, b ->
         date_time_less_than_or_equal?(a.start_at, b.start_at)
       end)
 
@@ -88,20 +93,20 @@ defmodule Mastery.Boundary.Proctor do
 
   @spec maybe_append_timeout(tuple, [quiz_info], DateTime.t) :: tuple
   defp maybe_append_timeout(tuple, [], _now), do: tuple
-  
+
   defp maybe_append_timeout(tuple, quizzes, now) do
-    timeout = 
+    timeout =
       quizzes
       |> hd()
       |> Map.fetch!(:start_at)
-      |> DateTime.diff(now, :millisecond) 
+      |> DateTime.diff(now, :millisecond)
 
     Tuple.append(tuple, timeout)
   end
-  
+
   @spec start_quizzes([quiz_info], DateTime.t) :: [quiz_info]
   defp start_quizzes(quizzes, now) do
-    {ready, not_ready} = Enum.split_while(quizzes, fn quiz -> 
+    {ready, not_ready} = Enum.split_while(quizzes, fn quiz ->
       date_time_less_than_or_equal?(quiz.start_at, now)
     end)
 
@@ -115,8 +120,8 @@ defmodule Mastery.Boundary.Proctor do
     notify_start(quiz)
     QuizManager.build_quiz(quiz.fields)
     Enum.each(quiz.templates, &add_template(quiz, &1))
-  
-    timeout = 
+
+    timeout =
       quiz.end_at
       |> DateTime.diff(now, :millisecond)
       |> time_to_finish()
@@ -126,8 +131,8 @@ defmodule Mastery.Boundary.Proctor do
 
   @spec notify_start(map) :: any
   defp notify_start(%{notify_pid: nil}), do: nil
-  
-  defp notify_start(quiz), do: 
+
+  defp notify_start(quiz), do:
     send(quiz.notify_pid, {:started, quiz.fields.title})
 
   @spec notify_stopped(pid | nil, String.t) :: any
@@ -139,9 +144,9 @@ defmodule Mastery.Boundary.Proctor do
   defp time_to_finish(_negative_timediff), do: 0
 
   @spec date_time_less_than_or_equal?(DateTime.t, DateTime.t) :: boolean
-  defp date_time_less_than_or_equal?(a, b), do: 
+  defp date_time_less_than_or_equal?(a, b), do:
     DateTime.compare(a, b) in ~w[lt eq]a
-  
+
   @spec add_template(quiz_info, keyword) :: :ok
   defp add_template(quiz, template_fields), do:
     QuizManager.add_template(quiz.fields.title, template_fields)

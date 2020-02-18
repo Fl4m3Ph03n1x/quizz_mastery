@@ -50,7 +50,7 @@ defmodule Mastery.Boundary.QuizSession do
   def active_sessions_for(quiz_title), do:
     Mastery.Supervisor.QuizSession
     |> DynamicSupervisor.which_children()
-    |> Enum.filter(&child_pid?/1)    
+    |> Enum.filter(&child_pid?/1)
     |> Enum.flat_map(&active_sessions(&1, quiz_title))
 
   @spec end_sessions([pname]) :: :ok
@@ -74,8 +74,8 @@ defmodule Mastery.Boundary.QuizSession do
   def handle_call({:answer_question, answer, fun}, _from, {quiz, email}) do
     persistence_fn = fun || fn(response, f) -> f.(response) end
     response = Response.new(quiz, email, answer)
-    
-    persistence_fn.(response, fn r -> 
+
+    persistence_fn.(response, fn r ->
       quiz
       |> Quiz.answer_question(r)
       |> Quiz.select_question()
@@ -109,7 +109,7 @@ defmodule Mastery.Boundary.QuizSession do
     }
 
   @spec child_pid?(any) :: boolean
-  defp child_pid?({:undefined, pid, :worker, [__MODULE__]}) when is_pid(pid), 
+  defp child_pid?({:undefined, pid, :worker, [__MODULE__]}) when is_pid(pid),
     do: true
 
   defp child_pid?(_child), do: false

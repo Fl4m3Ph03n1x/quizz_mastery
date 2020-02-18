@@ -2,10 +2,10 @@ defmodule MasteryTest do
   use ExUnit.Case, async: false
   use QuizBuilders
 
-  alias MasteryPersistence.Repo
-  alias Mastery.Examples.Math
+  alias Ecto.Adapters.SQL.Sandbox
   alias Mastery.Boundary.QuizSession
-  alias MasteryPersistence.Response
+  alias Mastery.Examples.Math
+  alias MasteryPersistence.{Repo, Response}
 
   #########
   # Setup #
@@ -18,7 +18,7 @@ defmodule MasteryTest do
       template_fields(generators: addition_generators([1], [2]))
     ]
 
-    assert "" != ExUnit.CaptureLog.capture_log(fn -> 
+    assert "" != ExUnit.CaptureLog.capture_log(fn ->
       :ok = start_quiz(always_add_1_to_2)
     end)
 
@@ -45,10 +45,10 @@ defmodule MasteryTest do
   # Aux Functions #
   #################
 
-  defp enable_persistence(), do:
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Repo)
+  defp enable_persistence, do:
+    :ok = Sandbox.checkout(Repo)
 
-  defp response_count(), do:
+  defp response_count, do:
     Repo.aggregate(Response, :count, :id)
 
   defp start_quiz(fields) do
